@@ -16,6 +16,7 @@ import org.jsoup.nodes.Document;
 
 public abstract class NetworkUtils {
     protected static final int TIME_OUT = 60_000; // Better for mobile connections
+public static String lastTitleFetchError = null;
 
     private final static String LOGGER_NAME = NetworkUtils.class.getSimpleName();
 
@@ -78,6 +79,7 @@ public abstract class NetworkUtils {
     final Document pageResp;
     try {
         Log.i(LOGGER_NAME, "Loading url: " + url);
+        lastTitleFetchError = null; // 重置
         pageResp = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                         "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
@@ -89,6 +91,8 @@ public abstract class NetworkUtils {
         title = pageResp.title();
     } catch (final Exception e) {
         Log.e(LOGGER_NAME, "Failed to load title: " + e);
+        lastTitleFetchError = e.getClass().getSimpleName() + ": " + e.getMessage();
+        
         return new String[]{title, description};
     }
 
