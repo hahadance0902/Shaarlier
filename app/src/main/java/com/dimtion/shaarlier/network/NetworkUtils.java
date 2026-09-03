@@ -15,7 +15,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 public abstract class NetworkUtils {
-    protected static final int TIME_OUT = 60_000; // Better for mobile connections
+    protected static final int TIME_OUT = 10000; // Better for mobile connections
     public static String lastTitleFetchError = null;
 
     private final static String LOGGER_NAME = NetworkUtils.class.getSimpleName();
