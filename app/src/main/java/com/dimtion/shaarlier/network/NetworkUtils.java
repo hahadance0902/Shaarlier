@@ -16,7 +16,7 @@ import org.jsoup.nodes.Document;
 
 public abstract class NetworkUtils {
     protected static final int TIME_OUT = 60_000; // Better for mobile connections
-public static String lastTitleFetchError = null;
+    public static String lastTitleFetchError = null;
 
     private final static String LOGGER_NAME = NetworkUtils.class.getSimpleName();
 
@@ -26,7 +26,24 @@ public static String lastTitleFetchError = null;
             "meta[name=twitter:description]",
             "meta[name=mastodon:description]",
     };
+private static final String[] YOUTUBE_URL_PREFIXES = {
+        "https://www.youtube.com/watch",
+        "https://youtube.com/watch",
+        "https://m.youtube.com/watch",
+        "https://youtu.be/",
+        "https://www.youtube.com/shorts/",
+        "https://youtube.com/shorts/",
+        "https://m.youtube.com/shorts/",
+};
 
+private static boolean isYoutubeUrl(@NonNull String url) {
+    for (String prefix : YOUTUBE_URL_PREFIXES) {
+        if (url.startsWith(prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
     /**
      * Check if a string is an url
      * TODO : unit test on this, I'm not quite sure it is perfect...
@@ -66,7 +83,33 @@ public static String lastTitleFetchError = null;
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         return (networkInfo != null && networkInfo.isConnected());
     }
+private static String[] loadFromYoutubeOEmbed(@NonNull String url) {
+    String title = "";
+    String description = "";
+    try {
+        String oembedUrl = "https://www.youtube.com/oembed?url="
+                + java.net.URLEncoder.encode(url, "UTF-8")
+                + "&format=json";
 
+        Log.i(LOGGER_NAME, "Loading YouTube oEmbed: " + oembedUrl);
+
+        String json = Jsoup.connect(oembedUrl)
+                .ignoreContentType(true)
+                .timeout(TIME_OUT)
+                .execute()
+                .body();
+
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        title = obj.optString("title", "");
+        // oEmbed 沒有 description 欄位，這裡用作者名稱代替，格式可自行調整
+        String author = obj.optString("author_name", "");
+        description = author.isEmpty() ? "" : ("YouTube - " + author);
+    } catch (final Exception e) {
+        Log.e(LOGGER_NAME, "Failed to load YouTube oEmbed: " + e);
+        lastTitleFetchError = e.getClass().getSimpleName() + ": " + e.getMessage();
+    }
+    return new String[]{title, description};
+}
     /**
      * Static method to load the title of a web page
      *
@@ -74,6 +117,16 @@ public static String lastTitleFetchError = null;
      * @return "" if there is an error, the page title in other cases
      */
     public static String[] loadTitleAndDescription(@NonNull String url) {
+    // 新增：YouTube 網址優先用 oEmbed，速度快很多
+    if (isYoutubeUrl(url)) {
+        String[] oembedResult = loadFromYoutubeOEmbed(url);
+        if (!"".equals(oembedResult[0])) {
+            return oembedResult; // oEmbed 成功，直接回傳
+        }
+        // oEmbed 失敗（例如影片被下架），往下 fallback 用原本的方法繼續嘗試
+        Log.w(LOGGER_NAME, "YouTube oEmbed failed, falling back to normal scraping");
+    }
+
     String title = "";
     String description = "";
     final Document pageResp;
