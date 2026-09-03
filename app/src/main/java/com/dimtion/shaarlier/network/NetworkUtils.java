@@ -101,10 +101,22 @@ private static String[] loadFromYoutubeOEmbed(@NonNull String url) {
 
         org.json.JSONObject obj = new org.json.JSONObject(json);
         title = obj.optString("title", "");
-        // oEmbed 沒有 description 欄位，這裡用作者名稱代替，格式可自行調整
+        
         String author = obj.optString("author_name", "");
-        description = author.isEmpty() ? "" : ("YouTube - " + author);
-    } catch (final Exception e) {
+        String thumbnailUrl = obj.optString("thumbnail_url", "");
+        
+        StringBuilder descBuilder = new StringBuilder();
+        if (!author.isEmpty()) {
+            descBuilder.append("YouTube - ").append(author);
+        }
+        if (!thumbnailUrl.isEmpty()) {
+            if (descBuilder.length() > 0) {
+                descBuilder.append("\n\n");
+            }
+            descBuilder.append("![").append(title).append("](").append(thumbnailUrl).append(")");
+        }
+        description = descBuilder.toString();
+            } catch (final Exception e) {
         Log.e(LOGGER_NAME, "Failed to load YouTube oEmbed: " + e);
         lastTitleFetchError = e.getClass().getSimpleName() + ": " + e.getMessage();
     }
