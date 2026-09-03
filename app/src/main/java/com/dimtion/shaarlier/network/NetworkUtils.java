@@ -73,21 +73,24 @@ public abstract class NetworkUtils {
      * @return "" if there is an error, the page title in other cases
      */
     public static String[] loadTitleAndDescription(@NonNull String url) {
-        String title = "";
-        String description = "";
-        final Document pageResp;
-        try {
-            Log.i(LOGGER_NAME, "Loading url: " + url);
-            pageResp = Jsoup.connect(url)
-                    .followRedirects(true)
-                    .execute()
-                    .parse();
-            title = pageResp.title();
-        } catch (final Exception e) {
-            // Just abandon the task if there is a problem
-            Log.e(LOGGER_NAME, "Failed to load title: " + e);
-            return new String[]{title, description};
-        }
+    String title = "";
+    String description = "";
+    final Document pageResp;
+    try {
+        Log.i(LOGGER_NAME, "Loading url: " + url);
+        pageResp = Jsoup.connect(url)
+                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                        "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+                .cookie("CONSENT", "YES+")   // avoids YouTube's EU cookie-consent redirect
+                .timeout(TIME_OUT)
+                .followRedirects(true)
+                .execute()
+                .parse();
+        title = pageResp.title();
+    } catch (final Exception e) {
+        Log.e(LOGGER_NAME, "Failed to load title: " + e);
+        return new String[]{title, description};
+    }
 
         // Many ways to get the description
         for (String selector : NetworkUtils.DESCRIPTION_SELECTORS) {
