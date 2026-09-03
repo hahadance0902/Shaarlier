@@ -324,6 +324,10 @@ public class ShareActivity extends AppCompatActivity {
 
         if (isError) {
             titleEdit.setHint(R.string.error_retrieving_title);
+            String debugMsg = com.dimtion.shaarlier.network.NetworkUtils.lastTitleFetchError;
+        if (debugMsg != null) {
+            Toast.makeText(getApplicationContext(), "DEBUG: " + debugMsg, Toast.LENGTH_LONG).show();
+        }
         } else {
             titleEdit.setText(title);
         }
